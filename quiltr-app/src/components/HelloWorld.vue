@@ -1,141 +1,82 @@
 <template>
-  <div class="hello">
+  <div>
     <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br />
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener"
-        >vue-cli documentation</a
-      >.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel"
-          target="_blank"
-          rel="noopener"
-          >babel</a
+    <div>
+      <input
+        type="number"
+        min="1"
+        max="100"
+        v-model="numColumns"
+        @change="regenerateCells"
+      />
+      x
+      <input
+        type="number"
+        min="1"
+        max="100"
+        v-model="numRows"
+        @change="regenerateCells"
+      />
+    </div>
+    <div class="swatches-container">
+      <div
+        :class="[
+          'swatch-container',
+          selectedSwatchIndex == index
+            ? 'swatch-selected'
+            : 'swatch-unselected',
+        ]"
+        v-for="(swatch, index) in swatches"
+        :key="index"
+        :value="index"
+      >
+        <button @click="selectedSwatchIndex = index">
+          Swatch {{ index + 1 }}
+        </button>
+
+        <br />
+        <input type="color" v-model="swatch.color" />
+        <br />
+        {{ swatchCounts[index] }}
+      </div>
+      <div class="swatch-container">
+        <button @click="addSwatch">+</button>
+      </div>
+    </div>
+    <div style="float: right">
+      <button @click="load">Load</button>
+      <button @click="save">Save</button>
+    </div>
+    <div>Brush Size: <input type="number" v-model="brushSize" /></div>
+    <div class="quilt" @mousedown="onMouseDown" @mouseup="onMouseUp">
+      <div v-for="(row, rowIndex) in rows" :key="rowIndex" class="quilt-row">
+        <span
+          v-for="(cell, cellIndex) in row"
+          :key="cellIndex"
+          class="quilt-cell"
+          @mouseover="onMouseOver(cell)"
+          @mousedown="(ev) => onMouseDownOnCell(cell, ev)"
+          :style="{ backgroundColor: swatches[cell.swatchIndex].color }"
+          >{{ cell.name }}</span
         >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-pwa"
-          target="_blank"
-          rel="noopener"
-          >pwa</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-router"
-          target="_blank"
-          rel="noopener"
-          >router</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-vuex"
-          target="_blank"
-          rel="noopener"
-          >vuex</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint"
-          target="_blank"
-          rel="noopener"
-          >eslint</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-unit-jest"
-          target="_blank"
-          rel="noopener"
-          >unit-jest</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-e2e-cypress"
-          target="_blank"
-          rel="noopener"
-          >e2e-cypress</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-typescript"
-          target="_blank"
-          rel="noopener"
-          >typescript</a
-        >
-      </li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li>
-        <a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a>
-      </li>
-      <li>
-        <a href="https://forum.vuejs.org" target="_blank" rel="noopener"
-          >Forum</a
-        >
-      </li>
-      <li>
-        <a href="https://chat.vuejs.org" target="_blank" rel="noopener"
-          >Community Chat</a
-        >
-      </li>
-      <li>
-        <a href="https://twitter.com/vuejs" target="_blank" rel="noopener"
-          >Twitter</a
-        >
-      </li>
-      <li>
-        <a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a>
-      </li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li>
-        <a href="https://router.vuejs.org" target="_blank" rel="noopener"
-          >vue-router</a
-        >
-      </li>
-      <li>
-        <a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a>
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-devtools#vue-devtools"
-          target="_blank"
-          rel="noopener"
-          >vue-devtools</a
-        >
-      </li>
-      <li>
-        <a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener"
-          >vue-loader</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/awesome-vue"
-          target="_blank"
-          rel="noopener"
-          >awesome-vue</a
-        >
-      </li>
-    </ul>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
+
+type Swatch = {
+  color: string;
+};
+
+type Cell = {
+  name: string;
+  swatchIndex: number;
+  row: number;
+  col: number;
+};
 
 @Options({
   props: {
@@ -144,23 +85,198 @@ import { Options, Vue } from "vue-class-component";
 })
 export default class HelloWorld extends Vue {
   msg!: string;
+
+  brushSize = 1;
+  numRows = 40;
+  numColumns = 64;
+  selectedSwatchIndex = 0;
+
+  rows: Cell[][] = [];
+  swatches: Swatch[] = [
+    { color: "#FFAAAA" },
+    { color: "#AAFFAA" },
+    { color: "#AAAAFF" },
+  ];
+
+  swatchCounts: number[] = [];
+
+  created() {
+    this.regenerateCells();
+    this.load();
+  }
+
+  addRow() {
+    this.numRows++;
+    this.regenerateCells();
+  }
+
+  removeRow() {
+    this.numRows--;
+    this.regenerateCells();
+  }
+
+  addColumn() {
+    this.numColumns++;
+    this.regenerateCells();
+  }
+
+  removeColumn() {
+    this.numColumns--;
+    this.regenerateCells();
+  }
+
+  regenerateCells() {
+    var oldRows = this.rows;
+    this.rows = [];
+    for (var i = 0; i < this.numRows; i++) {
+      this.rows[i] = [];
+      for (var j = 0; j < this.numColumns; j++) {
+        this.rows[i][j] = { name: `${i},${j}`, swatchIndex: 0, row: i, col: j };
+        if (oldRows[i] && oldRows[i][j])
+          this.rows[i][j].swatchIndex = oldRows[i][j].swatchIndex;
+      }
+    }
+    this.queueSave();
+  }
+
+  isMouseDown = false;
+
+  onMouseDownOnCell(cell: Cell, event: MouseEvent) {
+    if (event.button !== 0) return;
+    this.isMouseDown = true;
+    this.setColor(cell);
+  }
+
+  onMouseDown(event: MouseEvent) {
+    if (event.button !== 0) return;
+    this.isMouseDown = true;
+  }
+
+  onMouseUp() {
+    this.isMouseDown = false;
+  }
+
+  onMouseOver(cell: Cell) {
+    if (this.isMouseDown) {
+      this.setColor(cell);
+    }
+  }
+
+  setColor(cell: Cell) {
+    var leftIndex = cell.col - Math.floor((this.brushSize - 1) / 2);
+    var rightIndex = cell.col + Math.ceil((this.brushSize - 1) / 2);
+    var topIndex = cell.row - Math.floor((this.brushSize - 1) / 2);
+    var bottomIndex = cell.row + Math.ceil((this.brushSize - 1) / 2);
+
+    if (leftIndex < 0) leftIndex = 0;
+    if (rightIndex >= this.numColumns) rightIndex = this.numColumns - 1;
+    if (topIndex < 0) topIndex = 0;
+    if (bottomIndex >= this.numRows) bottomIndex = this.numRows - 1;
+
+    for (var colIndex = leftIndex; colIndex <= rightIndex; colIndex++) {
+      for (var rowIndex = topIndex; rowIndex <= bottomIndex; rowIndex++) {
+        var cellToChange = this.rows[rowIndex][colIndex];
+        if (cellToChange.swatchIndex !== this.selectedSwatchIndex) {
+          cellToChange.swatchIndex = this.selectedSwatchIndex;
+        }
+      }
+    }
+    this.queueSave();
+  }
+
+  addSwatch() {
+    this.swatches = [...this.swatches, { color: "#FFFFFF" }];
+    this.selectedSwatchIndex = this.swatches.length - 1;
+    this.queueSave();
+  }
+
+  countSwatches() {
+    this.swatchCounts = this.swatches.map(() => 0);
+    this.rows.forEach((row) =>
+      row.forEach((cell) => this.swatchCounts[cell.swatchIndex]++)
+    );
+  }
+
+  saveTimeout = 0;
+  queueSave() {
+    if (!this.saveTimeout) {
+      this.saveTimeout = setTimeout(() => {
+        this.save();
+        this.saveTimeout = 0;
+      }, 2000);
+    }
+  }
+
+  save() {
+    const model = {
+      grid: this.rows,
+      swatches: this.swatches,
+      selectedSwatchIndex: this.selectedSwatchIndex,
+      brushSize: this.brushSize,
+    };
+
+    localStorage.setItem("quilt", JSON.stringify(model));
+    this.countSwatches();
+  }
+
+  load() {
+    const json = localStorage.getItem("quilt");
+    if (json) {
+      const model = JSON.parse(json);
+      this.rows = model.grid;
+      this.swatches = model.swatches;
+      this.selectedSwatchIndex = model.selectedSwatchIndex || 0;
+      this.brushSize = model.brushSize || 1;
+
+      this.numRows = this.rows.length;
+      this.numColumns = this.rows[0].length;
+
+      this.regenerateCells();
+      this.countSwatches();
+    }
+  }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
-h3 {
-  margin: 40px 0 0;
+<style scoped>
+.quilt {
+  --cell-size: 18px;
+  --label-size: 8px;
+  background: black;
+  padding: 1em;
+  overflow: auto;
+  display: block;
+  user-select: none;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+
+.quilt-row {
+  white-space: nowrap;
+  line-height: var(--cell-size);
+  margin-bottom: -2px;
 }
-li {
+
+.quilt-cell {
+  background: #ddddff;
   display: inline-block;
-  margin: 0 10px;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  line-height: var(--cell-size);
+  text-align: center;
+  margin: 1px;
+  font-size: var(--label-size);
 }
-a {
-  color: #42b983;
+
+.swatches-container {
+  display: flex;
+  flex-direction: row;
+}
+.swatch-container {
+  border: 2px solid transparent;
+  padding: 2px;
+}
+.swatch-selected {
+  background: pink;
+  border: 2px solid black;
 }
 </style>
